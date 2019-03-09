@@ -1,4 +1,4 @@
-use crate::binary::chunk;
+use super::chunk;
 
 pub struct Reader {
     data: Vec<u8>,
@@ -35,10 +35,11 @@ impl Reader {
     }
 
     fn read_lua_number(&mut self) -> f64 {
-        use std::f64; // TODO
+        use std::f64;
         f64::from_bits(self.read_u64())
     }
 
+    //read n bytes
     fn read_bytes(&mut self, n: usize) -> Vec<u8> {
         let mut vec = Vec::new();
         for _i in 0..n {
@@ -48,15 +49,17 @@ impl Reader {
     }
 
     fn read_string(&mut self) -> String {
-        self.read_string0().unwrap_or_else(|| String::new())
+        match self.read_string0() {
+            None => String::new(),
+            Some(val) => val
+        }
     }
 
     fn read_string0(&mut self) -> Option<String> {
         let mut size = self.read_byte() as usize;
         if size == 0 {
             return None;
-        }
-        if size == 0xFF {
+        } else if size == 0xFF {
             size = self.read_u64() as usize; // size_t
         }
         let bytes = self.read_bytes(size - 1);
@@ -90,6 +93,10 @@ impl Reader {
         assert_eq!(self.read_lua_number(), chunk::LUAC_NUM, "float format mismatch!");
     }
 
+    pub fn read_upvalues(&mut self) {
+        self.read_byte();
+    }
+
     pub fn read_proto(&mut self) -> chunk::Prototype {
         self.read_proto0(None)
     }
@@ -97,7 +104,7 @@ impl Reader {
     fn read_proto0(&mut self, parent_source: Option<String>) -> chunk::Prototype {
         let source = self.read_string0().or(parent_source);
         chunk::Prototype {
-            source: source.clone(), // debug
+            source: source.clone(),
             line_defined: self.read_u32(),
             last_line_defined: self.read_u32(),
             num_params: self.read_byte(),
@@ -107,9 +114,9 @@ impl Reader {
             constants: self.read_vec(|r| r.read_constant()),
             upvalues: self.read_vec(|r| r.read_upvalue()),
             protos: self.read_vec(|r| r.read_proto0(source.clone())),
-            line_info: self.read_vec(|r| r.read_u32()),        // debug
-            loc_vars: self.read_vec(|r| r.read_loc_var()),     // debug
-            upvalue_names: self.read_vec(|r| r.read_string()), // debug
+            line_info: self.read_vec(|r| r.read_u32()),
+            loc_vars: self.read_vec(|r| r.read_loc_var()),
+            upvalue_names: self.read_vec(|r| r.read_string()),
         }
     }
 
