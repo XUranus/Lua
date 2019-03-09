@@ -1,4 +1,4 @@
-use super::super::vm::instructions::Instruction;
+use crate::vm::instructions::Instruction;
 
 #[allow(dead_code)]
 struct BinaryChunk {
