@@ -231,7 +231,7 @@ impl LuaAPI for LuaState {
     /* comparison and arithmetic functions */
 
     fn arith(&mut self, op: u8) {
-        if op != LUA_OPUNM && op != LUA_OPBNOT {
+        if op != LUA_OPUNM && op != LUA_OPBNOT { //double operands
             let b = self.stack.pop();
             let a = self.stack.pop();
             if let Some(result) = super::arith_ops::arith(&a, &b, op) {
@@ -239,7 +239,7 @@ impl LuaAPI for LuaState {
                 return;
             }
         } else {
-            let a = self.stack.pop();
+            let a = self.stack.pop(); //single operands
             if let Some(result) = super::arith_ops::arith(&a, &a, op) {
                 self.stack.push(result);
                 return;
@@ -263,19 +263,22 @@ impl LuaAPI for LuaState {
 
     /* miscellaneous functions */
 
+    //return the len of var at idx
     fn len(&mut self, idx: isize) {
         let val = self.stack.get(idx);
         if let LuaValue::Str(s) = val {
             self.stack.push(LuaValue::Integer(s.len() as i64));
+            //TODO::current only think about string length
         } else {
             panic!("length error!")
         }
     }
 
+    //pop n data from top of stack and build a string
     fn concat(&mut self, n: isize) {
         if n == 0 {
             self.stack.push(LuaValue::Str(String::new()))
-        } else if n >= 2 {
+        } else if n >= 2 { //min len of string
             for _ in 1..n {
                 if self.is_string(-1) && self.is_string(-2) {
                     let s2 = self.to_string(-1);

@@ -33,7 +33,7 @@ impl LuaValue {
         match self {
             LuaValue::Integer(i) => Some(*i as f64),
             LuaValue::Number(n) => Some(*n),
-            LuaValue::Str(s) => s.parse::<f64>().ok(), // TODO
+            LuaValue::Str(s) => s.parse::<f64>().ok(), // TODO::
             _ => None,
         }
     }

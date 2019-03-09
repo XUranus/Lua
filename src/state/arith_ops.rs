@@ -3,60 +3,79 @@ use super::lua_value::LuaValue;
 fn iadd(a: i64, b: i64) -> i64 {
     a + b
 }
+
 fn fadd(a: f64, b: f64) -> f64 {
     a + b
 }
+
 fn isub(a: i64, b: i64) -> i64 {
     a - b
 }
+
 fn fsub(a: f64, b: f64) -> f64 {
     a - b
 }
+
 fn imul(a: i64, b: i64) -> i64 {
     a * b
 }
+
 fn fmul(a: f64, b: f64) -> f64 {
     a * b
 }
+
 fn imod(a: i64, b: i64) -> i64 {
     super::math::i_mod(a, b)
 }
+
 fn fmod(a: f64, b: f64) -> f64 {
     super::math::f_mod(a, b)
 }
+
 fn pow(a: f64, b: f64) -> f64 {
     a.powf(b)
 }
+
 fn div(a: f64, b: f64) -> f64 {
     a / b
 }
+
 fn iidiv(a: i64, b: i64) -> i64 {
     super::math::i_floor_div(a, b)
 }
+
 fn fidiv(a: f64, b: f64) -> f64 {
     super::math::f_floor_div(a, b)
 }
+
 fn band(a: i64, b: i64) -> i64 {
     a & b
 }
+
 fn bor(a: i64, b: i64) -> i64 {
     a | b
 }
+
 fn bxor(a: i64, b: i64) -> i64 {
     a ^ b
 }
+
 fn shl(a: i64, b: i64) -> i64 {
     super::math::shift_left(a, b)
 }
+
 fn shr(a: i64, b: i64) -> i64 {
     super::math::shift_right(a, b)
 }
+
 fn iunm(a: i64, _: i64) -> i64 {
     -a
 }
+
 fn funm(a: f64, _: f64) -> f64 {
     -a
 }
+
 fn bnot(a: i64, _: i64) -> i64 {
     !a
 }
