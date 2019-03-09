@@ -1,96 +1,18 @@
-mod binary;
-mod vm;
 mod api;
+mod binary;
 mod state;
+mod vm;
 
-use crate::api::{consts::*, LuaAPI};
+use crate::api::{consts::*, LuaAPI, LuaVM};
+use crate::binary::chunk::Prototype;
 use crate::state::LuaState;
-
+use crate::vm::instructions::Instruction;
 use std::env;
 use std::fs::File;
 use std::io;
 use std::io::prelude::*;
 
-
-/*×××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××××*/
-pub mod test {
-    use super::state;
-    use crate::api::{consts::*, LuaAPI};
-    use crate::state::LuaState;
-
-    use std::env;
-    use std::fs::File;
-    use std::io;
-    use std::io::prelude::*;
-
-    pub fn test1() {
-        let mut ls = state::new_lua_state();
-
-        ls.push_boolean(true);
-        print_stack(&ls);
-        ls.push_integer(10);
-        print_stack(&ls);
-        ls.push_nil();
-        print_stack(&ls);
-        ls.push_string("hello".to_string());
-        print_stack(&ls);
-        ls.push_value(-4);
-        print_stack(&ls);
-        ls.replace(3);
-        print_stack(&ls);
-        ls.set_top(6);
-        print_stack(&ls);
-        ls.remove(-3);
-        print_stack(&ls);
-        ls.set_top(-5);
-        print_stack(&ls);
-    }
-
-    pub fn test2() {
-        let mut ls = state::new_lua_state();
-
-        ls.push_integer(1);
-        ls.push_string("2.0".to_string());
-        ls.push_string("3.0".to_string());
-        ls.push_number(4.0);
-        print_stack(&ls);
-
-        ls.arith(LUA_OPADD);
-        print_stack(&ls);
-        ls.arith(LUA_OPBNOT);
-        print_stack(&ls);
-        ls.len(2);
-        print_stack(&ls);
-        ls.concat(3);
-        print_stack(&ls);
-        let x = ls.compare(1, 2, LUA_OPEQ);
-        ls.push_boolean(x);
-        print_stack(&ls);
-    }
-
-
-    fn print_stack(ls: &LuaState) {
-        let top = ls.get_top();
-        for i in 1..top + 1 {
-            let t = ls.type_id(i);
-            match t {
-                LUA_TBOOLEAN => print!("[{}]", ls.to_boolean(i)),
-                LUA_TNUMBER => print!("[{}]", ls.to_number(i)),
-                LUA_TSTRING => print!("[{:?}]", ls.to_string(i)),
-                _ => print!("[{}]", ls.type_name(t)), // other values
-            }
-        }
-        println!();
-    }
-
-}
-
-
-
-/**************************************************/
 fn main() -> io::Result<()> {
-    test::test2();
-
     if env::args().count() > 1 {
         let filename = env::args().nth(1).unwrap();
         let mut file = File::open(filename)?;
@@ -99,7 +21,24 @@ fn main() -> io::Result<()> {
         file.read_to_end(&mut data)?;
 
         let proto = binary::undump(data);
-        proto.list();
+        lua_main(proto);
     }
     Ok(())
+}
+
+fn lua_main(proto: Prototype) {
+    let nregs = proto.max_stack_size;
+    let mut ls = state::new_lua_state((nregs + 8) as usize, proto);
+    ls.set_top(nregs as isize);
+    loop {
+        let pc = ls.pc();
+        let instr = ls.fetch();
+        if instr.opcode() != vm::opcodes::OP_RETURN {
+            instr.execute(&mut ls);
+            print!("[{:04}] {} ", pc + 1, instr.opname());
+            ls.print_stack();
+        } else {
+            break;
+        }
+    }
 }

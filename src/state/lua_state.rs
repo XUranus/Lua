@@ -1,19 +1,78 @@
 use super::lua_stack::LuaStack;
 use super::lua_value::LuaValue;
 use crate::api::consts::*;
-use crate::api::LuaAPI;
+use crate::api::{LuaAPI,LuaVM};
+use crate::binary::chunk::{Constant,Prototype};
 
-pub const DEFAULT_SIZE:usize = 20;
 
 //TODO::current assume luaState has only one stack
 pub struct LuaState {
     stack: LuaStack,
+    proto: Prototype,
+    pc: isize,
 }
 
 impl LuaState {
-    pub fn new() -> LuaState {
+    pub fn new(stack_size: usize, proto: Prototype) -> LuaState {
         LuaState {
-            stack: LuaStack::new(DEFAULT_SIZE),
+            stack: LuaStack::new(stack_size),
+            proto,
+            pc:0
+        }
+    }
+
+    //debug function
+    pub fn print_stack(&self) {
+        let top = self.get_top();
+        for i in 1..top + 1 {
+            let t = self.type_id(i);
+            match t {
+                LUA_TBOOLEAN => print!("[{}]", self.to_boolean(i)),
+                LUA_TNUMBER => print!("[{}]", self.to_number(i)),
+                LUA_TSTRING => print!("[{:?}]", self.to_string(i)),
+                _ => print!("[{}]", self.type_name(t)), // other values
+            }
+        }
+        println!();
+    }
+
+}
+
+impl LuaVM for LuaState {
+    fn pc(&self) -> isize {
+        self.pc
+    }
+
+    fn add_pc(&mut self, n: isize) {
+        self.pc += n;
+    }
+
+    //fetch code and jump to next pc
+    fn fetch(&mut self) -> u32 {
+        let instr = self.proto.code[self.pc as usize];
+        self.pc += 1;
+        return instr;
+    }
+
+    fn get_const(&mut self, idx: isize) {
+        let c = &self.proto.constants[idx as usize];
+        let val = match c {
+            Constant::Nil => LuaValue::Nil,
+            Constant::Boolean(b) => LuaValue::Boolean(*b),
+            Constant::Integer(i) => LuaValue::Integer(*i),
+            Constant::Number(n) => LuaValue::Number(*n),
+            Constant::Str(s) => LuaValue::Str((*s).clone()),
+        };
+        self.stack.push(val);
+    }
+
+    fn get_rk(&mut self, rk: isize) {
+        if rk > 0xFF {
+            // constant
+            self.get_const(rk & 0xFF);
+        } else {
+            // register
+            self.push_value(rk + 1);
         }
     }
 }
