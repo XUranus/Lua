@@ -31,3 +31,8 @@ pub const LUA_OPBNOT: u8 = 13; // ~
 pub const LUA_OPEQ: u8 = 0; // ==
 pub const LUA_OPLT: u8 = 1; // <
 pub const LUA_OPLE: u8 = 2; // <=
+
+pub const LUA_MINSTACK: usize = 20;
+pub const LUAI_MAXSTACK: usize = 1000000;
+pub const LUA_REGISTRYINDEX: isize = -(LUAI_MAXSTACK as isize) - 1000;
+pub const LUA_RIDX_GLOBALS: isize = 2;
