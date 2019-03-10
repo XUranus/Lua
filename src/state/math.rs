@@ -54,3 +54,19 @@ fn is_positive_infinite(n: f64) -> bool {
 fn is_negative_infinite(n: f64) -> bool {
     n.is_infinite() && n.is_sign_negative()
 }
+
+// https://users.rust-lang.org/t/random-number-without-using-the-external-crate/17260/8
+pub fn random() -> usize {
+    let ptr = Box::into_raw(Box::new(123));
+    ptr as usize
+}
+
+pub fn float_to_integer(n: f64) -> Option<i64> {
+    let i = n as i64;
+    if i as f64 == n {
+        Some(i)
+    } else {
+        None
+    }
+}
+
