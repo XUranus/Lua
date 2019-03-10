@@ -7,6 +7,7 @@ use super::instr_load::*;
 use super::instr_misc::*;
 use super::instr_ops::*;
 use super::instr_table::*;
+use super::instr_call::*;
 
 const MAXARG_BX: isize = (1 << 18) - 1; // 262143
 const MAXARG_SBX: isize = MAXARG_BX >> 1; // 131071
@@ -99,7 +100,7 @@ impl Instruction for u32 {
             // OP_SETUPVAL => (),
             OP_SETTABLE => set_table(self, vm),
             OP_NEWTABLE => new_table(self, vm),
-            // OP_SELF => (),
+            OP_SELF => _self(self, vm),
             OP_ADD => add(self, vm),
             OP_SUB => sub(self, vm),
             OP_MUL => mul(self, vm),
@@ -123,16 +124,16 @@ impl Instruction for u32 {
             OP_LE => le(self, vm),
             OP_TEST => test(self, vm),
             OP_TESTSET => test_set(self, vm),
-            // OP_CALL => (),
-            // OP_TAILCALL => (),
-            // OP_RETURN => (),
+            OP_CALL => call(self, vm),
+            OP_TAILCALL => tail_call(self, vm),
+            OP_RETURN => _return(self, vm),
             OP_FORLOOP => for_loop(self, vm),
             OP_FORPREP => for_prep(self, vm),
             // OP_TFORCALL => (),
             // OP_TFORLOOP => (),
             OP_SETLIST => set_list(self, vm),
-            // OP_CLOSURE => (),
-            // OP_VARARG => (),
+            OP_CLOSURE => closure(self, vm),
+            OP_VARARG => vararg(self, vm),
             // OP_EXTRAARG => (),
             _ => {
                 println!("TODO::not implemnted op: {}\n",self.opname());

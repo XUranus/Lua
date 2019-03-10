@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use crate::vm::instructions::Instruction;
 
 #[allow(dead_code)]
@@ -38,7 +39,7 @@ pub struct Prototype {
     pub code: Vec<u32>,
     pub constants: Vec<Constant>,
     pub upvalues: Vec<Upvalue>,
-    pub protos: Vec<Prototype>,//sub func
+    pub protos: Vec<Rc<Prototype>>,//sub func
     pub line_info: Vec<u32>,
     pub loc_vars: Vec<LocVar>,
     pub upvalue_names: Vec<String>,

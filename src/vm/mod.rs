@@ -3,6 +3,7 @@ mod instr_load;
 mod instr_misc;
 mod instr_ops;
 mod instr_table;
+mod instr_call;
 mod fpb;
 pub mod instructions;
 pub mod opcodes;

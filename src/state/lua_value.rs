@@ -1,6 +1,8 @@
 use super::lua_table::LuaTable;
 use super::math::float_to_integer;
+use super::closure::Closure;
 use crate::api::consts::*;
+use crate::binary::chunk::Prototype;
 use std::cell::RefCell;
 use std::fmt;
 use std::hash::{Hash, Hasher};
@@ -14,6 +16,7 @@ pub enum LuaValue {
     Number(f64),
     Str(String),                  // TODO::
     Table(Rc<RefCell<LuaTable>>), // https://doc.rust-lang.org/std/cell/index.html#introducing-mutability-inside-of-something-immutable
+    Function(Rc<Closure>)
 }
 
 impl fmt::Debug for LuaValue {//TODO::
@@ -25,6 +28,7 @@ impl fmt::Debug for LuaValue {//TODO::
             LuaValue::Number(n) => write!(f, "({})", n),
             LuaValue::Str(s) => write!(f, "({})", s),
             LuaValue::Table(_) => write!(f, "(table)"),
+            LuaValue::Function(_) => write!(f, "(function)"),
         }
     }
 }
@@ -42,6 +46,8 @@ impl PartialEq for LuaValue {
         } else if let (LuaValue::Str(x), LuaValue::Str(y)) = (self, other) {
             x == y
         } else if let (LuaValue::Table(x), LuaValue::Table(y)) = (self, other) {
+            Rc::ptr_eq(x, y)
+        } else if let (LuaValue::Function(x), LuaValue::Function(y)) = (self, other) {
             Rc::ptr_eq(x, y)
         } else {
             false
@@ -62,11 +68,16 @@ impl Hash for LuaValue {
             LuaValue::Number(n) => n.to_bits().hash(state),
             LuaValue::Str(s) => s.hash(state),
             LuaValue::Table(t) => t.borrow().hash(state),
+            LuaValue::Function(c) => c.hash(state),
         }
     }
 }
 
 impl LuaValue {
+    pub fn new_lua_closure(proto: Rc<Prototype>) -> LuaValue {
+        LuaValue::Function(Rc::new(Closure::new(proto)))
+    }
+
     pub fn new_table(narr: usize, nrec: usize) -> LuaValue {
         LuaValue::Table(Rc::new(RefCell::new(LuaTable::new(narr, nrec))))
     }
@@ -86,6 +97,7 @@ impl LuaValue {
             LuaValue::Integer(_) => LUA_TNUMBER,
             LuaValue::Str(_) => LUA_TSTRING,
             LuaValue::Table(_) => LUA_TTABLE,
+            LuaValue::Function(_) => LUA_TFUNCTION,
         }
     }
 
