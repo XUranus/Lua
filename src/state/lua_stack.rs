@@ -2,7 +2,6 @@ use super::lua_value::LuaValue;
 use std::rc::Rc;
 use super::closure::Closure;
 use crate::api::consts::*;
-use std::any::Any;
 
 pub struct LuaStack {
     vec: Vec<LuaValue>,

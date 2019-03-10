@@ -7,6 +7,7 @@ use crate::api::{LuaAPI,LuaVM};
 use crate::binary::chunk::{Constant,Prototype};
 use crate::vm::instructions::*;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 const LUA_RIDX_GLOBALS: LuaValue = LuaValue::Integer(crate::api::consts::LUA_RIDX_GLOBALS as i64);
 
@@ -340,7 +341,7 @@ impl LuaAPI for LuaState {
     }
 
     fn push_rust_function(&mut self, f: RustFn) {
-        self.stack_mut().push(LuaValue::new_rust_closure(f));
+        self.stack_mut().push(LuaValue::new_rust_closure(f,0));
     }
 
     fn push_global_table(&mut self) {
@@ -497,6 +498,7 @@ impl LuaAPI for LuaState {
         self.stack_mut().push(c);
         0 // TODO
     }
+
 
     fn call(&mut self, nargs: usize, nresults: isize) {
         let val = self.stack().get(-(nargs as isize + 1));

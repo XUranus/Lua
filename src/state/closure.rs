@@ -2,11 +2,13 @@ use crate::binary::chunk::Prototype;
 use crate::api::RustFn;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use crate::state::lua_value::LuaValue;
 
 pub struct Closure {
     pub proto: Rc<Prototype>,//lua closure
-    rdm: usize,
     pub rust_fn: Option<RustFn>,//rust closure
+    pub upvalues:Vec<Rc<LuaValue>>,
+    rdm: usize,
 }
 
 //TODO::?usage?
@@ -22,22 +24,25 @@ impl Closure {
             proto: new_empty_prototype(), // TODO
             rust_fn: None,
             rdm: super::math::random(),
+            upvalues: Vec::new()
         }
     }
 
     pub fn new_lua_closure(proto: Rc<Prototype>) -> Closure {
         Closure {
-            proto: proto,
+            upvalues: Vec::with_capacity(proto.upvalues.len()),
+            proto,
             rust_fn: None,
-            rdm: super::math::random(),
+            rdm: super::math::random()
         }
     }
 
-    pub fn new_rust_closure(f: RustFn) -> Closure {
+    pub fn new_rust_closure(f: RustFn,n_upvals: usize) -> Closure {
         Closure {
             proto: new_empty_prototype(), // TODO
             rust_fn: Some(f),
             rdm: super::math::random(),
+            upvalues:Vec::with_capacity(n_upvals)
         }
     }
 }
