@@ -4,8 +4,8 @@ use std::hash::{Hash, Hasher};
 
 #[derive(Clone)]
 pub struct LuaTable {
-    arr: Vec<LuaValue>,
-    map: HashMap<LuaValue, LuaValue>,
+    pub arr: Vec<LuaValue>,
+    pub map: HashMap<LuaValue, LuaValue>,
     rdm: usize, // hash code
 }
 
@@ -30,7 +30,7 @@ impl LuaTable {
 
     pub fn get(&self, key: &LuaValue) -> LuaValue {
         if let Some(idx) = to_index(key) {
-            if idx <= self.arr.len() {
+            if idx >=1 && idx <= self.arr.len() {
                 return self.arr[idx - 1].clone(); // TODO
             }
         }

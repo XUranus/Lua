@@ -166,4 +166,9 @@ impl Prototype{
             println!("\t{}\t{}\t{}\t{}", i, name, upval.instack, upval.idx);
         }
     }
+
+
+    pub fn is_empty(&self) -> bool {
+        self.last_line_defined == 0 && self.num_params==0 && self.is_vararg==0 && self.is_vararg==0 && self.max_stack_size==0
+    }
 }

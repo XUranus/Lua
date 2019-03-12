@@ -27,7 +27,7 @@ impl fmt::Debug for LuaValue {//TODO::
             LuaValue::Integer(i) => write!(f, "({})", i),
             LuaValue::Number(n) => write!(f, "({})", n),
             LuaValue::Str(s) => write!(f, "({})", s),
-            LuaValue::Table(_) => write!(f, "(table)"),
+            LuaValue::Table(t) => write!(f,"(table<{:?},{:?}>)",t.borrow().arr,t.borrow().map),
             LuaValue::Function(_) => write!(f, "(function)"),
         }
     }
@@ -74,6 +74,7 @@ impl Hash for LuaValue {
 }
 
 impl LuaValue {
+    
     pub fn new_table(narr: usize, nrec: usize) -> LuaValue {
         LuaValue::Table(Rc::new(RefCell::new(LuaTable::new(narr, nrec))))
     }

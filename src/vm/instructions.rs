@@ -8,6 +8,7 @@ use super::instr_misc::*;
 use super::instr_ops::*;
 use super::instr_table::*;
 use super::instr_call::*;
+use super::instr_upval::*;
 use crate::vm::instr_upval::get_tab_up;
 
 const MAXARG_BX: isize = (1 << 18) - 1; // 262143
@@ -94,11 +95,11 @@ impl Instruction for u32 {
             OP_LOADKX => load_kx(self, vm),
             OP_LOADBOOL => load_bool(self, vm),
             OP_LOADNIL => load_nil(self, vm),
-            // OP_GETUPVAL => (),
+            OP_GETUPVAL => get_upval(self,vm),
             OP_GETTABUP => get_tab_up(self,vm),
             OP_GETTABLE => get_table(self, vm),
-            // OP_SETTABUP => (),
-            // OP_SETUPVAL => (),
+            OP_SETTABUP => set_tab_up(self,vm),
+            OP_SETUPVAL => set_upval(self,vm),
             OP_SETTABLE => set_table(self, vm),
             OP_NEWTABLE => new_table(self, vm),
             OP_SELF => _self(self, vm),

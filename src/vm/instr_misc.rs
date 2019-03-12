@@ -16,6 +16,6 @@ pub fn jmp(i: u32, vm: &mut LuaVM) {
 
     vm.add_pc(sbx);
     if a != 0 {
-        panic!("todo: jmp!");
+        vm.close_upvalues(a);
     }
 }

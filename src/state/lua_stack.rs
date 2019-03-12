@@ -1,13 +1,17 @@
 use super::lua_value::LuaValue;
-use std::rc::Rc;
 use super::closure::Closure;
 use crate::api::consts::*;
+use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
+
 
 pub struct LuaStack {
     vec: Vec<LuaValue>,
     registry: LuaValue,
     pub closure: Rc<Closure>,
     pub varargs: Vec<LuaValue>,
+    pub openuvs: HashMap<i32,RefCell<LuaValue>>,
     pub pc: isize,
 }
 
@@ -19,6 +23,7 @@ impl LuaStack {
             closure,
             varargs: Vec::new(),
             pc: 0,
+            openuvs: HashMap::new()
         }
     }
 
@@ -101,7 +106,11 @@ impl LuaStack {
     }
 
     pub fn is_valid(&self, idx: isize) -> bool {
-        if idx == LUA_REGISTRYINDEX {
+        if idx < LUA_REGISTRYINDEX {
+            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let c = &self.closure;
+            return c.is_fake() && uv_idx < c.upvalues.borrow().len();
+        } else if idx == LUA_REGISTRYINDEX {
             return true;
         }
         let abs_idx = self.abs_index(idx);
@@ -109,6 +118,16 @@ impl LuaStack {
     }
 
     pub fn get(&self, idx: isize) -> LuaValue {
+        if idx < LUA_REGISTRYINDEX {
+            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let c = self.closure.clone();
+            return if c.is_fake() || uv_idx >= c.upvalues.borrow().len() {
+                LuaValue::Nil
+            } else {
+                //println!("stack.get() upvals1 {:?}",self.closure.upvalues);
+                c.upvalues.borrow()[uv_idx].borrow().clone()
+            }
+        }
         if idx == LUA_REGISTRYINDEX {
             return self.registry.clone();
         }
@@ -122,6 +141,14 @@ impl LuaStack {
     }
 
     pub fn set(&mut self, idx: isize, val: LuaValue) {
+        if idx < LUA_REGISTRYINDEX {
+            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let c = &self.closure;
+            if c.is_fake() && uv_idx < c.upvalues.borrow().len() {
+                c.upvalues.borrow_mut().as_mut_slice()[uv_idx] = RefCell::new(val);
+            }
+            return;
+        }
         if idx == LUA_REGISTRYINDEX {
             self.registry = val;
             return;

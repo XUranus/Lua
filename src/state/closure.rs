@@ -2,12 +2,13 @@ use crate::binary::chunk::Prototype;
 use crate::api::RustFn;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
+use std::cell::RefCell;
 use crate::state::lua_value::LuaValue;
 
 pub struct Closure {
     pub proto: Rc<Prototype>,//lua closure
     pub rust_fn: Option<RustFn>,//rust closure
-    pub upvalues:Vec<Rc<LuaValue>>,
+    pub upvalues: RefCell<Vec<RefCell<LuaValue>>>,
     rdm: usize,
 }
 
@@ -19,18 +20,24 @@ impl Hash for Closure {
 }
 
 impl Closure {
+
     pub fn new_fake_closure() -> Closure {
         Closure {
             proto: new_empty_prototype(), // TODO
             rust_fn: None,
             rdm: super::math::random(),
-            upvalues: Vec::new()
+            upvalues: RefCell::new(Vec::new()) //empty
         }
     }
 
     pub fn new_lua_closure(proto: Rc<Prototype>) -> Closure {
+        let len = proto.upvalues.len();
+        let mut vec = Vec::with_capacity(len);
+        for i in 0..len {
+            vec.push(RefCell::new(LuaValue::Nil));
+        }
         Closure {
-            upvalues: Vec::with_capacity(proto.upvalues.len()),
+            upvalues: RefCell::new(vec),
             proto,
             rust_fn: None,
             rdm: super::math::random()
@@ -38,11 +45,23 @@ impl Closure {
     }
 
     pub fn new_rust_closure(f: RustFn,n_upvals: usize) -> Closure {
+        let len = n_upvals;
+        let mut vec = Vec::with_capacity(len);
+        for i in 0..len {
+            vec.push(RefCell::new(LuaValue::Nil));
+        }
         Closure {
             proto: new_empty_prototype(), // TODO
             rust_fn: Some(f),
             rdm: super::math::random(),
-            upvalues:Vec::with_capacity(n_upvals)
+            upvalues:RefCell::new(vec)
+        }
+    }
+
+    pub fn is_fake(&self) -> bool {
+        return match (self.proto.is_empty(),self.rust_fn) {
+            (true,None) => true,
+            _ => false
         }
     }
 }

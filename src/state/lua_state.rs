@@ -123,8 +123,48 @@ impl LuaVM for LuaState {
 
     fn load_proto(&mut self, idx: usize) {
         let proto = self.stack().closure.proto.protos[idx].clone();
-        let closure = LuaValue::new_lua_closure(proto);
-        self.stack_mut().push(closure);
+        let closure = LuaValue::new_lua_closure(proto.clone());
+        self.stack_mut().push(closure.clone());
+
+        let mut iter = proto.upvalues.iter().enumerate();
+        loop {
+            match iter.next() {
+                Some((i,uv_info)) => {
+                    let uv_idx  = uv_info.idx as i32;
+                    if let LuaValue::Function(cl) = &closure {
+                        if uv_info.instack == 1 {
+                            match self.stack().openuvs.get(&uv_idx) {
+                                Some(opennv) => {
+                                    //println!("lua_state.138 len={} upvalues[{}]={:?}",cl.upvalues.borrow().len(),i,opennv);
+                                    cl.upvalues.borrow_mut().as_mut_slice()[i] = opennv.clone();
+                                },
+                                None => {
+                                    //println!("lua_state.142 len={} upvalues[{}]={:?}",cl.upvalues.borrow().len(),i,self.stack().get(uv_idx as isize));
+                                    cl.upvalues.borrow_mut().as_mut_slice()[i] = RefCell::new(self.stack().get(uv_idx as isize));
+                                    let v = cl.upvalues.borrow()[i].clone();
+                                    self.stack_mut().openuvs.insert(uv_idx,v);//RefCell<LuaValue>
+                                }
+                            }
+                        }
+                    }
+                },
+                None => break
+            }
+        }
+    }
+
+    fn close_upvalues(&mut self,a: isize) {
+        let mut iter = self.stack_mut().openuvs.iter_mut();
+        loop {
+            match iter.next() {
+                Some((i,openuv)) => {
+                    if *i as isize >= a-1 {
+                        //let val = open//TODO::p201
+                    }
+                },
+                None => break
+            }
+        }
     }
 }
 
@@ -154,6 +194,8 @@ impl LuaAPI for LuaState {
 
     fn copy(&mut self, from_idx: isize, to_idx: isize) {
         let val = self.stack().get(from_idx);
+        //println!("{} {:?} {}",from_idx,val,to_idx);
+        //println!("copy() upvals:{:?}",self.stack().closure.upvalues);
         self.stack_mut().set(to_idx, val);
     }
 
@@ -344,6 +386,18 @@ impl LuaAPI for LuaState {
         self.stack_mut().push(LuaValue::new_rust_closure(f,0));
     }
 
+    fn push_rust_closure(&mut self,f: RustFn, n: usize) {
+        let closure = LuaValue::new_rust_closure(f,n);
+        for i in 0..n {
+            let val = self.stack_mut().pop();
+            if let LuaValue::Function(cl) = &closure {
+                //println!("lua_state.392 len={} upvalues[{}]={:?}",cl.upvalues.borrow().len(),n-i-1,val);
+                cl.upvalues.borrow_mut().as_mut_slice()[n-i-1] = RefCell::new(val);
+            }
+        }
+        self.stack_mut().push(closure);
+    }
+
     fn push_global_table(&mut self) {
         if let LuaValue::Table(t) = &self.registry {
             let global = t.borrow().get(&LUA_RIDX_GLOBALS);
@@ -357,6 +411,7 @@ impl LuaAPI for LuaState {
         if op != LUA_OPUNM && op != LUA_OPBNOT {
             let b = self.stack_mut().pop();
             let a = self.stack_mut().pop();
+            //println!("{:?}-{:?} {:?}",a,b,super::arith_ops::arith(&a, &b, op));//TODO:fix!
             if let Some(result) = super::arith_ops::arith(&a, &b, op) {
                 self.stack_mut().push(result);
                 return;
@@ -426,8 +481,10 @@ impl LuaAPI for LuaState {
     }
 
     fn get_table(&mut self, idx: isize) -> i8 {
+        //println!("idx={}",idx);
         let t = self.stack().get(idx);
         let k = self.stack_mut().pop();
+        //println!("{:?} {:?}",t,k);
         self.get_table_impl(&t, &k)
     }
 
@@ -494,8 +551,17 @@ impl LuaAPI for LuaState {
 
     fn load(&mut self, chunk: Vec<u8>, _chunk_name: &str, _mode: &str) -> u8 {
         let proto = crate::binary::undump(chunk);
-        let c = LuaValue::new_lua_closure(proto);
-        self.stack_mut().push(c);
+        let c = LuaValue::new_lua_closure(proto.clone());
+        self.stack_mut().push(c.clone());
+        if proto.upvalues.len() > 0 {
+            if let LuaValue::Table(tbl) = &(self.registry) {
+                let env = tbl.borrow().get(&(self::LUA_RIDX_GLOBALS));
+                if let LuaValue::Function(cl) = c {
+                    //debug sum.lua pushed (table) print=>function
+                    cl.upvalues.borrow_mut().as_mut_slice()[0]=RefCell::new(env);
+                }
+            }
+        }
         0 // TODO
     }
 
@@ -602,12 +668,16 @@ impl LuaState {
     }
 
     fn run_lua_closure(&mut self) {
+        let mut cnt = 1;
         loop {
             let instr = self.fetch();
             instr.execute(self);
 
             //DEBUG
+            print!("({})",cnt);
+            cnt += 1;
             self.print_stack(instr.opname());
+            println!("now upvals: {:?}",self.stack().closure.upvalues.borrow());
 
             if instr.opcode() == crate::vm::opcodes::OP_RETURN {
                 break;

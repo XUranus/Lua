@@ -1,4 +1,4 @@
 [[package]]
-name = "Lua"
+name = "lua"
 version = "0.1.0"
 
