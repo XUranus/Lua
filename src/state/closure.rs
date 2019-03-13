@@ -32,7 +32,7 @@ impl Closure {
 
     pub fn new_lua_closure(proto: Rc<Prototype>) -> Closure {
         let len = proto.upvalues.len();
-        let mut vec = Vec::with_capacity(len);
+        let mut vec = Vec::new();
         for i in 0..len {
             vec.push(RefCell::new(LuaValue::Nil));
         }
@@ -46,7 +46,7 @@ impl Closure {
 
     pub fn new_rust_closure(f: RustFn,n_upvals: usize) -> Closure {
         let len = n_upvals;
-        let mut vec = Vec::with_capacity(len);
+        let mut vec = Vec::new();
         for i in 0..len {
             vec.push(RefCell::new(LuaValue::Nil));
         }

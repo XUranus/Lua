@@ -169,6 +169,11 @@ impl Prototype{
 
 
     pub fn is_empty(&self) -> bool {
-        self.last_line_defined == 0 && self.num_params==0 && self.is_vararg==0 && self.is_vararg==0 && self.max_stack_size==0
+        /*line_defined: 0,
+        last_line_defined: 0,
+        num_params: 0,
+        is_vararg: 0,
+        max_stack_size: 0,*/
+        self.line_defined == 0 && self.last_line_defined==0 && self.num_params==0 && self.is_vararg==0 && self.max_stack_size==0
     }
 }

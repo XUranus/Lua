@@ -27,6 +27,10 @@ impl LuaStack {
         }
     }
 
+    pub fn slots(&self,i: usize) -> RefCell<LuaValue> {
+        RefCell::new(self.vec[i].clone())
+    }
+
     pub fn top(&self) -> isize {
         self.vec.len() as isize
     }
@@ -107,9 +111,9 @@ impl LuaStack {
 
     pub fn is_valid(&self, idx: isize) -> bool {
         if idx < LUA_REGISTRYINDEX {
-            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
             let c = &self.closure;
-            return c.is_fake() && uv_idx < c.upvalues.borrow().len();
+            return (!c.is_fake()) && (uv_idx < c.upvalues.borrow().len() as isize);
         } else if idx == LUA_REGISTRYINDEX {
             return true;
         }
@@ -119,13 +123,13 @@ impl LuaStack {
 
     pub fn get(&self, idx: isize) -> LuaValue {
         if idx < LUA_REGISTRYINDEX {
-            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
             let c = self.closure.clone();
-            return if c.is_fake() || uv_idx >= c.upvalues.borrow().len() {
+            return if (c.is_fake()) || (uv_idx >= c.upvalues.borrow().len() as isize) {
                 LuaValue::Nil
             } else {
                 //println!("stack.get() upvals1 {:?}",self.closure.upvalues);
-                c.upvalues.borrow()[uv_idx].borrow().clone()
+                c.upvalues.borrow()[uv_idx as usize].borrow().clone()
             }
         }
         if idx == LUA_REGISTRYINDEX {
@@ -142,10 +146,10 @@ impl LuaStack {
 
     pub fn set(&mut self, idx: isize, val: LuaValue) {
         if idx < LUA_REGISTRYINDEX {
-            let uv_idx = (LUA_REGISTRYINDEX - idx - 1) as usize;
+            let uv_idx = LUA_REGISTRYINDEX - idx - 1;
             let c = &self.closure;
-            if c.is_fake() && uv_idx < c.upvalues.borrow().len() {
-                c.upvalues.borrow_mut().as_mut_slice()[uv_idx] = RefCell::new(val);
+            if (!c.is_fake()) && (uv_idx < c.upvalues.borrow().len() as isize) {
+                c.upvalues.borrow_mut().as_mut_slice()[uv_idx as usize] = RefCell::new(val);
             }
             return;
         }

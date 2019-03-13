@@ -140,11 +140,13 @@ impl LuaVM for LuaState {
                                 },
                                 None => {
                                     //println!("lua_state.142 len={} upvalues[{}]={:?}",cl.upvalues.borrow().len(),i,self.stack().get(uv_idx as isize));
-                                    cl.upvalues.borrow_mut().as_mut_slice()[i] = RefCell::new(self.stack().get(uv_idx as isize));
+                                    cl.upvalues.borrow_mut().as_mut_slice()[i] = self.stack().slots(uv_idx as usize);
                                     let v = cl.upvalues.borrow()[i].clone();
                                     self.stack_mut().openuvs.insert(uv_idx,v);//RefCell<LuaValue>
                                 }
                             }
+                        } else {
+                            cl.upvalues.borrow_mut().as_mut_slice()[i] = self.stack().closure.upvalues.borrow()[i].clone();
                         }
                     }
                 },
@@ -160,6 +162,7 @@ impl LuaVM for LuaState {
                 Some((i,openuv)) => {
                     if *i as isize >= a-1 {
                         //let val = open//TODO::p201
+
                     }
                 },
                 None => break
@@ -575,6 +578,7 @@ impl LuaAPI for LuaState {
                 self.call_lua_closure(nargs, nresults, c);
             }
         } else {
+            println!("val = {:?}",val);
             panic!("not function!");
         }
     }
