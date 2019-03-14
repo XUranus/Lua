@@ -36,7 +36,7 @@ pub fn get_upval(i: u32, vm: &mut LuaVM) {
     let (mut a,mut b,_) = i.abc();
     a += 1;
     b += 1;
-    println!("get_upval {} {} {}",b,a,lua_upvalue_index(b));
+    //println!("get_upval {} {} {}",b,a,lua_upvalue_index(b));
     vm.copy(lua_upvalue_index(b),a)
 }
 

@@ -678,10 +678,10 @@ impl LuaState {
             instr.execute(self);
 
             //DEBUG
-            print!("({})",cnt);
-            cnt += 1;
-            self.print_stack(instr.opname());
-            println!("now upvals: {:?}",self.stack().closure.upvalues.borrow());
+            //print!("({})",cnt);
+            //cnt += 1;
+            //self.print_stack(instr.opname());
+            //println!("now upvals: {:?}",self.stack().closure.upvalues.borrow());
 
             if instr.opcode() == crate::vm::opcodes::OP_RETURN {
                 break;
