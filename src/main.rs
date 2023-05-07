@@ -23,6 +23,8 @@ fn main() -> io::Result<()> {
         ls.register("print", print);
         ls.load(data, &filename, "b");
         ls.call(0, 0);
+    } else {
+        println!("need to specify a file!");
     }
     Ok(())
 }
